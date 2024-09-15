@@ -1,0 +1,108 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Email List</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 20px;
+        }
+        h1 {
+            text-align: center;
+        }
+        #progress-container {
+            width: 100%;
+            margin-bottom: 20px;
+        }
+        #progress-bar {
+            width: 0;
+            height: 30px;
+            background: green;
+            color: white;
+            text-align: center;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+        table, th, td {
+            border: 1px solid #ddd;
+        }
+        th, td {
+            padding: 10px;
+            text-align: left;
+        }
+        th {
+            background-color: #f4f4f4;
+        }
+        td {
+            word-wrap: break-word;
+        }
+    </style>
+</head>
+<body>
+    <h1>List of Emails</h1>
+    <div id="progress-container">
+        <div id="progress-bar">Reading Messages...</div>
+    </div>
+    <table id="email-table">
+        <thead>
+            <tr>
+                <th>Subject</th>
+                <th>Sent Date</th>
+                <th>Received Date</th>
+                <th>Body</th>
+                <th>Attachments</th>
+            </tr>
+            {% for email in emails %}
+                <tr>
+                    <td>{{email.subject}}</td>
+                    <td>{{email.sent_date}}</td>
+                    <td>{{email.received_date}}</td>
+                    <td>{{email.body}}...</td>
+                    <td>{{email.attachments}}</td>
+                </tr>
+            {% endfor %}
+        </thead>
+        <tbody>
+        </tbody>
+    </table>
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <script>
+        const email_id = "{{email_id}}"
+        const webSocketUrl = "ws://" + window.location.host + '/ws/emails/' + email_id + '/';
+        const socket = new WebSocket(webSocketUrl);
+
+        socket.onmessage = function(e) {
+            const data = JSON.parse(e.data);
+            console.log(data)
+            if (data.progress !== undefined) {
+                $('#progress-bar').css('width', data.progress + '%').text(data.status);
+            }
+            if (data.email) {
+                console.log('email here')
+                const emailContent = data.email;
+                const attachmentLinks = emailContent.attachments.join(', ');
+                $('#email-table tbody').append(`
+                    <tr>
+                        <td>${emailContent.subject}</td>
+                        <td>${emailContent.sent_date}</td>
+                        <td>${emailContent.received_date}</td>
+                        <td>${emailContent.body.substring(0, 100)}...</td>
+                        <td>${attachmentLinks}</td>
+                    </tr>
+                `);
+            }
+        };
+
+        $(document).ready(function() {
+            socket.onopen = function() {
+                socket.send(JSON.stringify({ 'action': 'start_import' }));
+            };
+        });
+    </script>
+</body>
+</html>
