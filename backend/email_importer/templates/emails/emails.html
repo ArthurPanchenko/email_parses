@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Email List</title>
+    <title>Письма</title>
     <style>
         body {
             font-family: Arial, sans-serif;
@@ -44,30 +44,31 @@
     </style>
 </head>
 <body>
-    <h1>List of Emails</h1>
+    <h1>Список писем</h1>
     <div id="progress-container">
-        <div id="progress-bar">Reading Messages...</div>
+        <div id="progress-bar">Получение...</div>
     </div>
     <table id="email-table">
         <thead>
             <tr>
-                <th>Subject</th>
-                <th>Sent Date</th>
-                <th>Received Date</th>
-                <th>Body</th>
-                <th>Attachments</th>
+                <th>Тема</th>
+                <th>Дата отправки</th>
+                <th>Дата получения</th>
+                <th>Текст</th>
+                <th>Вложения</th>
             </tr>
+            
+        </thead>
+        <tbody>
             {% for email in emails %}
                 <tr>
                     <td>{{email.subject}}</td>
                     <td>{{email.sent_date}}</td>
                     <td>{{email.received_date}}</td>
-                    <td>{{email.body}}...</td>
+                    <td>{{email.body | truncatechars:100}}...</td>
                     <td>{{email.attachments}}</td>
                 </tr>
             {% endfor %}
-        </thead>
-        <tbody>
         </tbody>
     </table>
     <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
@@ -86,7 +87,7 @@
                 console.log('email here')
                 const emailContent = data.email;
                 const attachmentLinks = emailContent.attachments.join(', ');
-                $('#email-table tbody').append(`
+                $('#email-table tbody').prepend(`
                     <tr>
                         <td>${emailContent.subject}</td>
                         <td>${emailContent.sent_date}</td>
@@ -98,11 +99,6 @@
             }
         };
 
-        $(document).ready(function() {
-            socket.onopen = function() {
-                socket.send(JSON.stringify({ 'action': 'start_import' }));
-            };
-        });
     </script>
 </body>
 </html>

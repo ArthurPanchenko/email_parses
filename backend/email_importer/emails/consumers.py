@@ -31,10 +31,11 @@ class EmailConsumer(AsyncWebsocketConsumer):
             await self.start_import()
 
     async def start_import(self):
-        messages = await sync_to_async(fetch_emails)(self.email_account)
+        last_sent_date = await sync_to_async(self.get_last_sent_date)()
+        messages = await sync_to_async(fetch_emails)(self.email_account, last_sent_date)
 
         total_messages = len(messages)
-        for index, email in enumerate(messages):
+        for index, email in enumerate(reversed(messages)):
             progress = (index + 1) / total_messages * 100
             status = f'Загружено {index + 1} из {total_messages} писем'
 
@@ -46,6 +47,10 @@ class EmailConsumer(AsyncWebsocketConsumer):
             text_data=json.dumps(data, default=str)
             await self.send(text_data)
             await self.save_email_to_db(email)    
+
+    def get_last_sent_date(self):
+        last_message = EmailMessage.objects.filter(email_account=self.email_account).order_by('-sent_date').first()
+        return last_message.sent_date if last_message else None
 
     async def save_email_to_db(self, email):
         await sync_to_async(EmailMessage.objects.create)(
